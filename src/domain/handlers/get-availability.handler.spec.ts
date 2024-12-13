@@ -16,16 +16,27 @@ describe('GetAvailabilityHandler', () => {
     handler = new GetAvailabilityHandler(client);
   });
 
-  it('returns the availability', async () => {
-    client.clubs = {
-      '123': [{ id: 1 }],
-    };
-    client.courts = {
-      '1': [{ id: 1 }],
-    };
-    client.slots = {
-      '1_1_2022-12-05': [],
-    };
+  it('returns the availability from cache if available', async () => {
+    const placeId = '123';
+    const date = moment('2022-12-05').toDate();
+
+    // Setup cache data
+    const cacheKey = `availability:${placeId}:${date}`;
+    const cachedData = [{ id: 1, courts: [{ id: 1, available: [] }] }];
+    client.cache.set(cacheKey, cachedData);
+
+    const response = await handler.execute(
+      new GetAvailabilityQuery(placeId, date),
+    );
+
+    expect(response).toEqual(cachedData); // Verifica que se devuelva el resultado desde la cache
+  });
+
+  it('fetches from the API when cache is not available', async () => {
+    client.clubs = { '123': [{ id: 1 }] };
+    client.courts = { '1': [{ id: 1 }] };
+    client.slots = { '1_1_2022-12-05': [] };
+
     const placeId = '123';
     const date = moment('2022-12-05').toDate();
 
@@ -33,6 +44,7 @@ describe('GetAvailabilityHandler', () => {
       new GetAvailabilityQuery(placeId, date),
     );
 
+    // Verifica que se obtuvo el resultado de la API
     expect(response).toEqual([{ id: 1, courts: [{ id: 1, available: [] }] }]);
   });
 });
@@ -41,6 +53,10 @@ class FakeAlquilaTuCanchaClient implements AlquilaTuCanchaClient {
   clubs: Record<string, Club[]> = {};
   courts: Record<string, Court[]> = {};
   slots: Record<string, Slot[]> = {};
+  cache: Map<
+    string,
+    { id: number; courts: { id: number; available: boolean[][] }[] }[]
+  > = new Map();
   async getClubs(placeId: string): Promise<Club[]> {
     return this.clubs[placeId];
   }

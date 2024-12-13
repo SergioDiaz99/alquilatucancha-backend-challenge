@@ -1,4 +1,9 @@
+import { Available, CourtAttributes, Sport } from './submodels';
+
 export interface Court {
   id: number;
-  // TODO: fill
+  name: string;
+  attributes: CourtAttributes;
+  sports: Sport[];
+  available: Available[];
 }
