@@ -8,6 +8,8 @@ import { Court } from '../../domain/model/court';
 import { Slot } from '../../domain/model/slot';
 import { AlquilaTuCanchaClient } from '../../domain/ports/aquila-tu-cancha.client';
 
+const mockedData = require('../../../mock/data/ChIJoYUAHyvmopUR4xJzVPBE_Lw.json').data;
+
 @Injectable()
 export class HTTPAlquilaTuCanchaClient implements AlquilaTuCanchaClient {
   private base_url: string;
@@ -21,7 +23,15 @@ export class HTTPAlquilaTuCanchaClient implements AlquilaTuCanchaClient {
         baseURL: this.base_url,
         params: { placeId },
       })
-      .then((res) => res.data);
+      .then((res) => res.data)
+      .catch((error) => {
+        console.error(`API failed for getClubs: ${error.message}`);
+        return mockedData.map((club) => ({
+          id: club.id,
+          name: club.name,
+          logo: club.logo_url,
+        }));
+      });
   }
 
   getCourts(clubId: number): Promise<Court[]> {
@@ -29,7 +39,12 @@ export class HTTPAlquilaTuCanchaClient implements AlquilaTuCanchaClient {
       .get(`/clubs/${clubId}/courts`, {
         baseURL: this.base_url,
       })
-      .then((res) => res.data);
+      .then((res) => res.data)
+      .catch((error) => {
+        console.error(`API failed for getCourts: ${error.message}`);
+        const club = mockedData.find((c) => c.id === clubId);
+        return club ? club.courts : [];
+      });
   }
 
   getAvailableSlots(
@@ -42,6 +57,12 @@ export class HTTPAlquilaTuCanchaClient implements AlquilaTuCanchaClient {
         baseURL: this.base_url,
         params: { date: moment(date).format('YYYY-MM-DD') },
       })
-      .then((res) => res.data);
+      .then((res) => res.data)
+      .catch((error) => {
+        console.error(`API failed for getAvailableSlots: ${error.message}`);
+        const club = mockedData.find((c) => c.id === clubId);
+        const court = club?.courts.find((c) => c.id === courtId);
+        return court ? court.available : [];
+      });
   }
 }

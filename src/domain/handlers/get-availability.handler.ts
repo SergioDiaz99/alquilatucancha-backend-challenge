@@ -28,7 +28,7 @@ export class GetAvailabilityHandler
   async execute(query: GetAvailabilityQuery): Promise<ClubWithAvailability[]> {
     const cacheKey = `availability:${query.placeId}:${query.date}`;
 
-    // Intenta obtener datos del caché
+    // Se intenta obtener datos del caché
     const cachedData = this.cache.get<ClubWithAvailability[]>(cacheKey);
     //Si encuentra la cache, retorna el objeto, de lo contrario, busca en la API
     if (cachedData) return cachedData;
